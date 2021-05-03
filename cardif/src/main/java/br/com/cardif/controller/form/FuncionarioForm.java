@@ -14,9 +14,11 @@ import org.apache.logging.log4j.util.Strings;
 import br.com.cardif.model.Cargo;
 import br.com.cardif.model.Departamento;
 import br.com.cardif.model.Funcionario;
+import br.com.cardif.model.HistFuncionarioDepartamento;
 import br.com.cardif.repository.CargoRepository;
 import br.com.cardif.repository.DepartamentoRepository;
 import br.com.cardif.repository.FuncionarioRepository;
+import br.com.cardif.repository.HistFuncionarioDptoRepository;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -49,8 +51,6 @@ public class FuncionarioForm {
 	@NotNull
 	@ApiModelProperty(notes="Identificador departamento.")
 	private Integer idDepartamento;
-	
-	private List<String> historicoDepartamento;
 
 	public String getName() {
 		return name;
@@ -92,15 +92,16 @@ public class FuncionarioForm {
 		return idDepartamento;
 	}
 
-	public Funcionario converter(CargoRepository cargoRepository, DepartamentoRepository departamentoRepository) {
+	public Funcionario converter(CargoRepository cargoRepository, DepartamentoRepository departamentoRepository, HistFuncionarioDptoRepository histDeptoRep) {
 		Cargo cargo = cargoRepository.getOne(this.idCargo);
 		
 		Departamento departamento = departamentoRepository.getOne(idDepartamento);
 		
-		return new Funcionario(name, age, birthday, document, cargo, departamento, historicoDepartamento);
+		return new Funcionario(name, age, birthday, document, cargo, departamento);
+		
 	}
 
-	public Funcionario atualizar(Integer id, FuncionarioRepository funcionarioRepository, CargoRepository cargoRepository, DepartamentoRepository departamentoRepository) {
+	public Funcionario atualizar(Integer id, FuncionarioRepository funcionarioRepository, CargoRepository cargoRepository, DepartamentoRepository departamentoRepository,HistFuncionarioDptoRepository histFuncDptoRepository) {
 		Funcionario funcionarioRecuperado = funcionarioRepository.getOne(id);
 
 		if (Strings.isNotEmpty(this.name)) {
@@ -123,16 +124,23 @@ public class FuncionarioForm {
 		if (this.idDepartamento != null ) {
 			funcionarioRecuperado.setDepartamento(departamentoRepository.getOne(this.idDepartamento));
 		}
-		if (historicoDepartamento != null) {
-			String historicoDepartamentoText = "";
-			for (String d : this.historicoDepartamento) {
-				historicoDepartamentoText += d +",";
+		//Optional<HistFuncionarioDepartamento> histByFunc = histFuncDptoRepository.findByFuncionario_id(funcionarioRecuperado.getId());
+		Optional<List<HistFuncionarioDepartamento>> histByDepto = histFuncDptoRepository.findBydepartamentoId(funcionarioRecuperado.getDepartamento().getId());
+		
+		if (histByDepto.isPresent()) {
+			boolean atual = false;
+			for(HistFuncionarioDepartamento hist : histByDepto.get()) {
+				if (hist.getId() == funcionarioRecuperado.getId()) {
+					atual = true;
+				}
 			}
-			funcionarioRecuperado.setHistoricoDepartamentos(historicoDepartamentoText);
-			
+			if (!atual) {
+				HistFuncionarioDepartamento histFuncionarioDepartamento = new HistFuncionarioDepartamento(funcionarioRecuperado, departamentoRepository.getOne(this.idDepartamento), LocalDate.now());
+				histFuncDptoRepository.save(histFuncionarioDepartamento);
+			}
+				
 		}
 		
-
 		return funcionarioRecuperado;
 	}
 
@@ -159,14 +167,6 @@ public class FuncionarioForm {
 			funcionarioRecuperado.setHistoricoDepartamentos(funcionarioBanco.getHistoricoDepartamentos());
 			
 		return funcionarioRecuperado;
-	}
-
-	public List<String> getHistoricoDepartamento() {
-		return historicoDepartamento;
-	}
-
-	public void setHistoricoDepartamento(List<String> historicoDepartamento) {
-		this.historicoDepartamento = historicoDepartamento;
 	}
 
 }

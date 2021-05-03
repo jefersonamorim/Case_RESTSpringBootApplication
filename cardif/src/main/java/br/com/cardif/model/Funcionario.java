@@ -1,7 +1,6 @@
 package br.com.cardif.model;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -9,6 +8,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 
 @Entity
 public class Funcionario {
@@ -24,6 +24,14 @@ public class Funcionario {
 	
 	private String document;
 	
+	@OneToOne
+	private HistFuncionarioDepartamento historicoFuncionarioDepto;
+	
+	public Funcionario(String historicoDepartamentos) {
+		super();
+		this.historicoDepartamentos = historicoDepartamentos;
+	}
+
 	@ManyToOne
 	private Cargo cargo;
 	
@@ -62,7 +70,7 @@ public class Funcionario {
 		this.document = document;
 	}
 	
-	public Funcionario(String name, Integer age, LocalDate birthday, String document, Cargo cargo, Departamento departamento, List<String> historicoDepartamento) {
+	public Funcionario(String name, Integer age, LocalDate birthday, String document, Cargo cargo, Departamento departamento) {
 		this.name = name;
 		this.age = age;
 		this.birthday = birthday;
@@ -70,13 +78,6 @@ public class Funcionario {
 		this.cargo = cargo;
 		this.departamento = departamento;
 		
-		if (historicoDepartamento != null) {
-			String historicoDepartamentoText = "";
-			for (String d : historicoDepartamento) {
-				historicoDepartamentoText += d + ",";
-			}
-			this.historicoDepartamentos = historicoDepartamentoText;
-		}
 		
 	}
 

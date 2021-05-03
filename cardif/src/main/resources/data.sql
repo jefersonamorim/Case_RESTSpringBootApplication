@@ -1,20 +1,4 @@
-/*DROP TABLE IF EXISTS Funcionario;
-DROP TABLE IF EXISTS Cargo;
 
-CREATE TABLE Funcionario(
-	id int NOT NULL AUTO_INCREMENT PRIMARY_KEY,
-	name varchar(50),
-	birthday date,
-	document varchar(50),
-	cargo_id int FOREIGN KEY REFERENCES Cargo(id)
-	
-);
-
-CREATE TABLE Cargo(
-	id int NOT NULL AUTO_INCREMENT PRIMARY_KEY,
-	name varchar(50)
-);
-*/
 INSERT INTO DEPARTAMENTO(name) VALUES ('Administrativo');
 INSERT INTO DEPARTAMENTO(name) VALUES ('Recursos Humanos');
 INSERT INTO DEPARTAMENTO(name) VALUES ('Comercial');

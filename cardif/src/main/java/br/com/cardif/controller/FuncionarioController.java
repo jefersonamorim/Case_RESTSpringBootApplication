@@ -28,9 +28,11 @@ import br.com.cardif.controller.dto.FuncionarioDto;
 import br.com.cardif.controller.dto.PersistenceDto;
 import br.com.cardif.controller.form.FuncionarioForm;
 import br.com.cardif.model.Funcionario;
+import br.com.cardif.model.HistFuncionarioDepartamento;
 import br.com.cardif.repository.CargoRepository;
 import br.com.cardif.repository.DepartamentoRepository;
 import br.com.cardif.repository.FuncionarioRepository;
+import br.com.cardif.repository.HistFuncionarioDptoRepository;
 
 @RestController
 @RequestMapping("/funcionario")
@@ -45,6 +47,9 @@ public class FuncionarioController {
 	@Autowired 
 	private DepartamentoRepository departamentoRepository;
 	
+	@Autowired
+	private HistFuncionarioDptoRepository histFuncDptoRepository;
+	
 	@PostMapping
 	@Transactional
 	private ResponseEntity<?> cadastrar(@RequestBody @Valid FuncionarioForm funcionarioForm, UriComponentsBuilder uriComponentsBuilder){
@@ -54,8 +59,12 @@ public class FuncionarioController {
 			return ResponseEntity.ok().body(new PersistenceDto("Valor no campo 'Document' já existente."));
 		}
 		
-		Funcionario funcionario = funcionarioForm.converter(this.cargoRepository, this.departamentoRepository);
+		Funcionario funcionario = funcionarioForm.converter(this.cargoRepository, this.departamentoRepository, this.histFuncDptoRepository);
 		funcionarioRepository.save(funcionario);
+		
+		HistFuncionarioDepartamento hist = new HistFuncionarioDepartamento(funcionario.getId(), funcionario.getDepartamento().getId());
+		
+		histFuncDptoRepository.save(hist);
 		
 		URI uri = uriComponentsBuilder.path("/funcionario/{id}").buildAndExpand(funcionario.getId()).toUri();
 		return ResponseEntity.created(uri).body(new FuncionarioDto(funcionario));
@@ -97,7 +106,7 @@ public class FuncionarioController {
 		Optional<Funcionario> funcionario = this.funcionarioRepository.findById(id);
 		
 		if (funcionario.isPresent()) {
-			Funcionario funcionarioAtualziado = form.atualizar(funcionario.get().getId(), this.funcionarioRepository, this.cargoRepository, this.departamentoRepository);
+			Funcionario funcionarioAtualziado = form.atualizar(funcionario.get().getId(), this.funcionarioRepository, this.cargoRepository, this.departamentoRepository, this.histFuncDptoRepository);
 			this.funcionarioRepository.save(funcionarioAtualziado);
 			
 			return ResponseEntity.ok(new FuncionarioDto(funcionarioAtualziado));
@@ -172,6 +181,27 @@ public class FuncionarioController {
 		return ResponseEntity.notFound().build();
 	}
 	
+	@GetMapping("/historicoFuncionarioDepto")
+	private List<HistFuncionarioDepartamento> listarHistFuncionarioDepto(Integer idDepartamento, Integer idFuncionario) {
+		if (idDepartamento != null && idDepartamento > 0) {
+			Optional<List<HistFuncionarioDepartamento>> histByDepto = histFuncDptoRepository.findBydepartamentoId(idDepartamento);
+			
+			if (histByDepto.isPresent()) {
+				return histByDepto.get();
+			}
+		}else if(idFuncionario != null && idFuncionario > 0) {
+			Optional<List<HistFuncionarioDepartamento>> histByNameDpto = histFuncDptoRepository.findByfuncionarioId(idFuncionario);
+			
+			if (histByNameDpto.isPresent()) {
+				return histByNameDpto.get();
+			}
+		}else {
+			
+			return histFuncDptoRepository.findAll();
+		}
+		
+		return new ArrayList<HistFuncionarioDepartamento>();
+	}
 		
 	
 }
